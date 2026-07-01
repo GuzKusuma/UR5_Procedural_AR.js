@@ -6,416 +6,526 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
     />
-    <title>Web AR - PolyScope Guide</title>
-
-    <script>
-      window.addEventListener(
-        "error",
-        function (e) {
-          if (e.message && e.message.indexOf("querySelector") !== -1) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            return true;
-          }
-        },
-        true,
-      );
-    </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/aframe@1.2.0/dist/aframe-master.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@ar-js-org/ar.js@3.4.5/aframe/build/aframe-ar.js"></script>
-
+    <title>UR3 Augmented Reality Procedure</title>
     <style>
-      html, body {
-        margin: 0; padding: 0; overflow: hidden;
-        font-family: Arial, sans-serif; touch-action: manipulation;
+      :root {
+        --bg: #0b1622;
+        --panel: #13202f;
+        --teal: #2fb6c4;
+        --teal-dim: #1d6f78;
+        --amber: #e0a33a;
+        --green: #1d9e75;
+        --ink: #e8eef4;
+        --muted: #7f95a8;
+        --line: #22364a;
       }
-      #nav {
-        position: fixed; left: 0; right: 0; bottom: 24px; z-index: 9999;
-        display: flex; justify-content: center; gap: 20px;
-      }
-      #nav button {
-        font-size: 20px; font-weight: bold; padding: 16px 36px;
-        border-radius: 34px; border: none; color: #fff; cursor: pointer;
-        min-width: 140px; font-family: inherit;
-      }
-      #btnBack { background: #5a6b7f; }
-      #btnNext { background: #1d9e75; }
-      #progress {
-        position: fixed; top: 18px; left: 0; right: 0; z-index: 9999;
-        text-align: center; color: #fff; font-size: 16px;
-      }
-      #progress span {
-        background: rgba(0, 0, 0, 0.65); padding: 7px 18px; border-radius: 14px;
-      }
-      #homeBtn {
-        position: fixed; top: 14px; left: 14px; z-index: 10000;
-        display: flex; align-items: center; gap: 7px;
-        background: rgba(0, 0, 0, 0.6); color: #fff;
-        border: 1px solid rgba(255, 255, 255, 0.25);
-        padding: 10px 16px; border-radius: 24px; font-size: 15px;
-        font-weight: 600; cursor: pointer; font-family: inherit;
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
         -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
       }
-      #homeBtn:active { background: rgba(0, 0, 0, 0.85); }
-
-      /* ===== SLIDER UKURAN TUNGGAL (vertikal, kanan layar) ===== */
-      #sizeWrap {
-        position: fixed; top: 50%; right: 16px; transform: translateY(-50%);
-        z-index: 10001; display: flex; flex-direction: column;
-        align-items: center; gap: 10px;
-        background: rgba(15, 28, 42, 0.85);
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        border-radius: 28px; padding: 16px 10px;
-        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+      html,
+      body {
+        height: 100%;
       }
-      #sizeWrap .ico { color: #cfe6ff; font-size: 16px; font-weight: bold; }
-      #sizeRange {
-        -webkit-appearance: none; appearance: none;
-        writing-mode: vertical-lr; direction: rtl;
-        width: 8px; height: 180px; border-radius: 4px;
-        background: #22364a; outline: none;
+      body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        touch-action: manipulation;
       }
-      #sizeRange::-webkit-slider-thumb {
-        -webkit-appearance: none; width: 24px; height: 24px;
-        border-radius: 50%; background: #2fb6c4; cursor: pointer;
+      #bgCanvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        opacity: 0.5;
       }
-      #sizeRange::-moz-range-thumb {
-        width: 24px; height: 24px; border-radius: 50%;
-        background: #2fb6c4; cursor: pointer; border: none;
+      .vignette {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        background: radial-gradient(
+          ellipse at 50% 40%,
+          transparent 30%,
+          rgba(5, 12, 20, 0.85) 100%
+        );
       }
-      #sizeVal { color: #2fb6c4; font-family: monospace; font-size: 12px; }
+      .wrap {
+        position: relative;
+        z-index: 2;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        text-align: center;
+      }
+      .eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
+        color: var(--teal);
+        font-size: 13px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .eyebrow .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 10px var(--green);
+        animation: pulse 1.8s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+      h1 {
+        font-size: clamp(30px, 7vw, 56px);
+        line-height: 1.05;
+        font-weight: 800;
+        letter-spacing: -1px;
+        margin-bottom: 6px;
+      }
+      h1 .ur {
+        color: var(--teal);
+      }
+      h1 .ar {
+        color: var(--amber);
+      }
+      .subtitle {
+        color: var(--muted);
+        font-size: clamp(13px, 3.2vw, 16px);
+        margin-bottom: 8px;
+        max-width: 460px;
+        line-height: 1.5;
+      }
+      .spec {
+        color: var(--teal-dim);
+        font-size: 12px;
+        letter-spacing: 1px;
+        margin-bottom: 40px;
+        font-family: "Consolas", "Courier New", monospace;
+      }
+      .btns {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        width: 100%;
+        max-width: 320px;
+      }
+      .btn {
+        position: relative;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+        padding: 18px 24px;
+        border-radius: 14px;
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        transition:
+          transform 0.12s ease,
+          box-shadow 0.12s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+      }
+      .btn:active {
+        transform: scale(0.97);
+      }
+      .btn-start {
+        background: linear-gradient(135deg, var(--teal), var(--teal-dim));
+        color: #06141a;
+        box-shadow: 0 6px 24px rgba(47, 182, 196, 0.35);
+      }
+      .btn-set {
+        background: transparent;
+        color: var(--ink);
+        border: 1.5px solid var(--line);
+      }
+      .btn-set:active {
+        background: var(--panel);
+      }
+      .btn .ico {
+        font-size: 20px;
+      }
+      .watermark {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+        padding: 18px 24px 26px;
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.5px;
+      }
+      .watermark b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .watermark .line {
+        width: 40px;
+        height: 1px;
+        background: var(--line);
+        margin: 0 auto 12px;
+      }
+      .overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        background: rgba(5, 11, 18, 0.75);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .overlay.show {
+        display: flex;
+      }
+      .modal {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        width: 100%;
+        max-width: 380px;
+        padding: 26px;
+      }
+      .modal h2 {
+        font-size: 20px;
+        margin-bottom: 4px;
+      }
+      .modal .mh-sub {
+        color: var(--muted);
+        font-size: 13px;
+        margin-bottom: 22px;
+      }
+      .lang-opt {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        padding: 16px 18px;
+        border-radius: 12px;
+        border: 1.5px solid var(--line);
+        background: transparent;
+        color: var(--ink);
+        font-family: inherit;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-bottom: 12px;
+        transition: 0.15s;
+        text-align: left;
+      }
+      .lang-opt .flag {
+        font-size: 22px;
+      }
+      .lang-opt .sub {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 400;
+        margin-top: 2px;
+      }
+      .lang-opt.active {
+        border-color: var(--teal);
+        background: rgba(47, 182, 196, 0.1);
+      }
+      .lang-opt .check {
+        margin-left: auto;
+        color: var(--teal);
+        font-size: 18px;
+        opacity: 0;
+      }
+      .lang-opt.active .check {
+        opacity: 1;
+      }
+      .modal-close {
+        width: 100%;
+        margin-top: 10px;
+        padding: 14px;
+        border: none;
+        border-radius: 12px;
+        background: var(--teal);
+        color: #06141a;
+        font-weight: 700;
+        font-size: 16px;
+        cursor: pointer;
+        font-family: inherit;
+      }
     </style>
   </head>
   <body>
-    <a-scene
-      embedded
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: false"
-      loading-screen="enabled: false"
-      renderer="antialias: true; alpha: true; logarithmicDepthBuffer: true; precision: medium;"
-      arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono; maxDetectionRate: 30; trackingMethod: best;"
-    >
-      <a-assets timeout="5000">
-        <img id="ui1" src="polyscope_ui/ui1.png" crossorigin="anonymous" />
-        <img id="ui2" src="polyscope_ui/ui2.png" crossorigin="anonymous" />
-        <img id="ui3" src="polyscope_ui/ui3.png" crossorigin="anonymous" />
-        <img id="ui4" src="polyscope_ui/ui4.png" crossorigin="anonymous" />`
-        <img id="ui5" src="polyscope_ui/ui5.png" crossorigin="anonymous" />
-        <img id="ui6" src="polyscope_ui/ui6.png" crossorigin="anonymous" />
-        <img id="ui7" src="polyscope_ui/ui7.png" crossorigin="anonymous" />
-        <img id="ui8" src="polyscope_ui/ui8.png" crossorigin="anonymous" />
-        <img id="ui9" src="polyscope_ui/ui9.png" crossorigin="anonymous" />`
-        <audio id="sfxClick" src="button-click.mp3" preload="auto"></audio>
-        <audio id="sfxWaypoint" src="waypoint.mp3" preload="auto"></audio>
-        <audio id="sfxRobot" src="robot_trimmed.mp3" preload="auto"></audio>
-      </a-assets>
+    <canvas id="bgCanvas"></canvas>
+    <div class="vignette"></div>
 
-      <a-marker preset="hiro" id="markerHiro" smooth="true" smoothCount="15" smoothTolerance="0.02" smoothThreshold="2">
-        <a-entity id="trackContainer" position="0 0 0">
-          <a-entity id="trackInner" position="-0.25 0 -0.2">
-            <a-plane id="baseAlas" position="0.25 -0.03 0.2" rotation="-90 0 0" width="0.75" height="0.65" color="#9aa0a6"></a-plane>
+    <div class="wrap">
+      <div class="eyebrow">
+        <span class="dot"></span>
+        <span id="t-eyebrow">Universal Robots &middot; CB3 Training</span>
+      </div>
+      <h1>
+        <span class="ur">UR3</span> <span id="t-title1">Augmented Reality</span
+        ><br /><span class="ar" id="t-title2">Procedure</span>
+      </h1>
+      <p class="subtitle" id="t-subtitle">
+        Learn the robot motion programming procedure through an interactive
+        guide anchored in real space.
+      </p>
+      <div class="spec">
+        MoveL &middot; 4 Waypoints &middot; Blend Radius 50mm
+      </div>
 
-            <a-sphere id="wpDot1" visible="false" position="0 0.04 0" radius="0.04" color="#1D9E75"></a-sphere>
-            <a-sphere id="wpDot2" visible="false" position="0.5 0.04 0" radius="0.04" color="#E0A33A"></a-sphere>
-            <a-sphere id="wpDot3" visible="false" position="0.5 0.04 0.4" radius="0.04" color="#1D9E75"></a-sphere>
-            <a-sphere id="wpDot4" visible="false" position="0 0.04 0.4" radius="0.04" color="#1D9E75"></a-sphere>
-
-            <a-text id="wpLbl1" visible="false" value="WP1" position="0 0.12 0" align="center" color="#2E9BFF" scale="0.1 0.1 0.1" wrap-count="10" material="depthTest: false" render-order="10"></a-text>
-            <a-text id="wpLbl2" visible="false" value="WP2" position="0.5 0.12 0" align="center" color="#2E9BFF" scale="0.1 0.1 0.1" wrap-count="10" material="depthTest: false" render-order="10"></a-text>
-            <a-text id="wpLbl3" visible="false" value="WP3" position="0.5 0.12 0.4" align="center" color="#2E9BFF" scale="0.1 0.1 0.1" wrap-count="10" material="depthTest: false" render-order="10"></a-text>
-            <a-text id="wpLbl4" visible="false" value="WP4" position="0 0.12 0.4" align="center" color="#2E9BFF" scale="0.1 0.1 0.1" wrap-count="10" material="depthTest: false" render-order="10"></a-text>
-
-            <a-entity id="seg1" visible="false" line="start: 0 0.04 0;      end: 0.45 0.04 0;     color: #378ADD"></a-entity>
-            <a-entity id="seg2" visible="false" line="start: 0.45 0.04 0;   end: 0.5 0.04 0.05;   color: #378ADD"></a-entity>
-            <a-entity id="seg3" visible="false" line="start: 0.5 0.04 0.05; end: 0.5 0.04 0.4;    color: #378ADD"></a-entity>
-            <a-entity id="seg4" visible="false" line="start: 0.5 0.04 0.4;  end: 0 0.04 0.4;      color: #378ADD"></a-entity>
-            <a-entity id="seg5" visible="false" line="start: 0 0.04 0.4;    end: 0 0.04 0;        color: #378ADD"></a-entity>
-
-            <a-entity id="robotRig" position="0.25 0 0.2" rotation="0 90 0">
-              <a-entity id="robotModel" gltf-model="url(ur3_robot_rest.glb)" scale="2 2 2"
-                animation-mixer="clip: UR_ReachSequence; loop: once; timeScale: 0; clampWhenFinished: true"></a-entity>
-            </a-entity>
-          </a-entity>
-        </a-entity>
-
-        <a-entity id="polyPanel" position="0 0.62 -0.5">
-          <a-image id="polyImg" src="#ui1" width="1.0" height="0.742"></a-image>
-        </a-entity>
-
-        <a-entity id="guidePanel" position="0 1.2 -0.5">
-          <a-text id="panelNum" value="STEP 1 / 12" position="0 0.1 0.01" align="center" color="#8fb7e8" scale="0.22 0.22 0.22"></a-text>
-          <a-text id="panelInstr" value="Tap Empty Program" position="0 -0.02 0.01" align="center" color="#ffffff" scale="0.3 0.3 0.3" wrap-count="26"></a-text>
-          <a-text id="panelCtrl" value="Empty Program" position="0 -0.12 0.01" align="center" color="#E0A33A" scale="0.24 0.24 0.24"></a-text>
-        </a-entity>
-      </a-marker>
-
-      <a-entity camera></a-entity>
-    </a-scene>
-
-    <button id="homeBtn" onclick="window.location.href = 'index.html'">
-      &#8592; <span id="t-menu">Menu</span>
-    </button>
-
-    <div id="sizeWrap">
-      <span class="ico">+</span>
-      <input type="range" id="sizeRange" min="0.5" max="2.5" step="0.1" value="1.0" />
-      <span class="ico">&minus;</span>
-      <span id="sizeVal">1.0&times;</span>
+      <div class="btns">
+        <button class="btn btn-start" onclick="startAR()">
+          <span class="ico">&#9654;</span> <span id="t-start">Start</span>
+        </button>
+        <button class="btn btn-set" onclick="openSettings()">
+          <span class="ico">&#9881;</span> <span id="t-settings">Settings</span>
+        </button>
+      </div>
     </div>
 
-    <div id="progress">
-      <span id="t-progress">Step <b id="cur">1</b> / 12</span>
+    <div class="watermark">
+      <div class="line"></div>
+      <span id="t-by">by</span> <b>Ida Bagus Kusuma Dewantara</b>
     </div>
-    <div id="nav">
-      <button id="btnBack" disabled>&#9664; <span id="t-back">Back</span></button>
-      <button id="btnNext"><span id="t-next">Next</span> &#9654;</button>
+
+    <div class="overlay" id="settingsOverlay">
+      <div class="modal">
+        <h2 id="t-settings-title">Settings</h2>
+        <p class="mh-sub" id="t-settings-sub">
+          Choose the language for the procedure instructions.
+        </p>
+
+        <button class="lang-opt active" id="optEn" onclick="selectLang('en')">
+          <span class="flag">&#127468;&#127463;</span>
+          <span>English<span class="sub">Default language</span></span>
+          <span class="check">&#10003;</span>
+        </button>
+
+        <button class="lang-opt" id="optZh" onclick="selectLang('zh')">
+          <span class="flag">&#127481;&#127484;</span>
+          <span
+            >&#32321;&#39636;&#20013;&#25991;<span class="sub"
+              >Traditional Chinese</span
+            ></span
+          >
+          <span class="check">&#10003;</span>
+        </button>
+
+        <button class="modal-close" id="t-done" onclick="closeSettings()">
+          Done
+        </button>
+      </div>
     </div>
 
     <script>
-      function getParam(name) {
-        var m = new RegExp("[?&]" + name + "=([^&]+)").exec(window.location.search);
-        return m ? decodeURIComponent(m[1]) : null;
-      }
-      var lang = getParam("lang") === "zh" ? "zh" : "en";
-
-      var DATA = {
+      // ====== terjemahan menu ======
+      var UI = {
         en: {
-          menu: "Menu", back: "Back", next: "Next",
-          stepWord: "STEP", progressWord: "Step", ctrlLabel: "PolyScope control:",
-          steps: [
-            { text: "Tap Empty Program", ctrl: "Empty Program", robot: null },
-            { text: "Tap Structure tab", ctrl: "Structure", robot: null },
-            { text: "Tap Move", ctrl: "Move", robot: null },
-            { text: "Change MoveJ to MoveL", ctrl: "MoveL", robot: null },
-            { text: "Tap Waypoint in tree", ctrl: "Waypoint", robot: null },
-            { text: "Set Waypoint_1 (WP1)", ctrl: "Set this WP", robot: { x: 0, z: 0 }, rotY: 140 },
-            { text: "Add waypoint after (WP2)", ctrl: "Add Waypoint", robot: { x: 0.5, z: 0 }, rotY: 40 },
-            { text: "Add waypoint after (WP3)", ctrl: "Add Waypoint", robot: { x: 0.5, z: 0 }, rotY: -40 },
-            { text: "Add waypoint after (WP4)", ctrl: "Add Waypoint", robot: { x: 0, z: 0 }, rotY: -140 },
-            { text: "Set Blend Radius 50mm (WP2)", ctrl: "Blend Radius", robot: { x: 0.5, z: 0 }, rotY: 40 },
-            { text: "File menu - Save", ctrl: "Save", robot: null },
-            { text: "Tap Play - robot runs", ctrl: "Play", robot: "run" },
-          ],
+          eyebrow: "Universal Robots \u00b7 CB3 Training",
+          title1: "Augmented Reality",
+          title2: "Procedure",
+          subtitle:
+            "Learn the robot motion programming procedure through an interactive guide anchored in real space.",
+          start: "Start",
+          settings: "Settings",
+          by: "by",
+          settingsTitle: "Settings",
+          settingsSub: "Choose the language for the procedure instructions.",
+          done: "Done",
         },
         zh: {
-          menu: "\u9078\u55ae", back: "\u4e0a\u4e00\u6b65", next: "\u4e0b\u4e00\u6b65",
-          stepWord: "\u6b65\u9a5f", progressWord: "\u6b65\u9a5f", ctrlLabel: "PolyScope \u63a7\u5236\uff1a",
-          steps: [
-            { text: "\u9ede\u9078 Empty Program", ctrl: "Empty Program", robot: null },
-            { text: "\u9ede\u9078 Structure \u9801\u7c64", ctrl: "Structure", robot: null },
-            { text: "\u9ede\u9078 Move", ctrl: "Move", robot: null },
-            { text: "\u5c07 MoveJ \u8b8a\u66f4\u70ba MoveL", ctrl: "MoveL", robot: null },
-            { text: "\u9ede\u9078\u7a0b\u5e8f\u6a39\u4e2d\u7684 Waypoint", ctrl: "Waypoint", robot: null },
-            { text: "\u8a2d\u5b9a Waypoint_1\uff08WP1\uff09", ctrl: "Set this WP", robot: { x: 0, z: 0 }, rotY: 140 },
-            { text: "\u5728\u5f8c\u65b9\u65b0\u589e waypoint\uff08WP2\uff09", ctrl: "Add Waypoint", robot: { x: 0.5, z: 0 }, rotY: 40 },
-            { text: "\u5728\u5f8c\u65b9\u65b0\u589e waypoint\uff08WP3\uff09", ctrl: "Add Waypoint", robot: { x: 0.5, z: 0 }, rotY: -40 },
-            { text: "\u5728\u5f8c\u65b9\u65b0\u589e waypoint\uff08WP4\uff09", ctrl: "Add Waypoint", robot: { x: 0, z: 0 }, rotY: -140 },
-            { text: "\u8a2d\u5b9a WP2 \u7684 Blend Radius 50mm", ctrl: "Blend Radius", robot: { x: 0.5, z: 0 }, rotY: 40 },
-            { text: "File \u9078\u55ae - \u5132\u5b58", ctrl: "Save", robot: null },
-            { text: "\u9ede\u9078 Play - \u6a5f\u5668\u4eba\u57f7\u884c", ctrl: "Play", robot: "run" },
-          ],
+          eyebrow: "Universal Robots \u00b7 CB3 \u8a13\u7df4",
+          title1: "\u64f4\u589e\u5be6\u5883",
+          title2: "\u64cd\u4f5c\u7a0b\u5e8f",
+          subtitle:
+            "\u900f\u904e\u9326\u5b9a\u65bc\u771f\u5be6\u7a7a\u9593\u7684\u4e92\u52d5\u5f0f\u6307\u5f15\uff0c\u5b78\u7fd2\u6a5f\u5668\u4eba\u904b\u52d5\u7de8\u7a0b\u7a0b\u5e8f\u3002",
+          start: "\u958b\u59cb",
+          settings: "\u8a2d\u5b9a",
+          by: "\u4f5c\u8005",
+          settingsTitle: "\u8a2d\u5b9a",
+          settingsSub:
+            "\u9078\u64c7\u7a0b\u5e8f\u6307\u5f15\u7684\u8a9e\u8a00\u3002",
+          done: "\u5b8c\u6210",
         },
       };
 
-      var D = DATA[lang];
-      var steps = D.steps;
-      var current = 0;
+      var selectedLang = "en";
 
-      document.getElementById("t-menu").textContent = D.menu;
-      document.getElementById("t-back").textContent = D.back;
-      document.getElementById("t-next").textContent = D.next;
-      document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
-
-      function playSfx(id) {
-        var a = document.getElementById(id);
-        if (a) { try { a.currentTime = 0; a.play(); } catch (e) {} }
+      function applyLang(lang) {
+        var d = UI[lang];
+        document.getElementById("t-eyebrow").innerHTML = d.eyebrow;
+        document.getElementById("t-title1").textContent = d.title1;
+        document.getElementById("t-title2").textContent = d.title2;
+        document.getElementById("t-subtitle").textContent = d.subtitle;
+        document.getElementById("t-start").textContent = d.start;
+        document.getElementById("t-settings").textContent = d.settings;
+        document.getElementById("t-by").textContent = d.by;
+        document.getElementById("t-settings-title").textContent =
+          d.settingsTitle;
+        document.getElementById("t-settings-sub").textContent = d.settingsSub;
+        document.getElementById("t-done").textContent = d.done;
+        document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
       }
 
-      // SLIDER UKURAN TUNGGAL: track+robot DAN panel PolyScope + instruksi sekaligus
-      var sizeRange = document.getElementById("sizeRange");
-      sizeRange.addEventListener("input", function () {
-        var s = parseFloat(this.value);
-        document.getElementById("sizeVal").textContent = s.toFixed(1) + "\u00d7";
-        var c = document.getElementById("trackContainer");
-        if (c) c.setAttribute("scale", s + " " + s + " " + s);
-        var panel = document.getElementById("polyPanel");
-        if (panel) panel.setAttribute("scale", s + " " + s + " " + s);
-        var guide = document.getElementById("guidePanel");
-        if (guide) guide.setAttribute("scale", s + " " + s + " " + s);
-      });
-
-      function render() {
-        var s = steps[current];
-        document.getElementById("cur").textContent = current + 1;
-        document.getElementById("t-progress").innerHTML = D.progressWord + ' <b id="cur">' + (current + 1) + "</b> / 12";
-        document.getElementById("panelNum").setAttribute("value", D.stepWord + " " + (current + 1) + " / 12");
-        document.getElementById("panelInstr").setAttribute("value", s.text);
-        document.getElementById("panelCtrl").setAttribute("value", s.ctrl);
-
-        var uiMap = ["#ui1","#ui2","#ui3","#ui4","#ui5","#ui5","#ui6","#ui6","#ui6","#ui7","#ui8","#ui9"];
-        var polyImg = document.getElementById("polyImg");
-        if (polyImg && uiMap[current]) { polyImg.setAttribute("src", uiMap[current]); }
-
-        document.getElementById("btnBack").disabled = current === 0;
-        document.getElementById("btnNext").disabled = current === steps.length - 1;
-
-        var segVisible = { seg1: current >= 6, seg2: current >= 7, seg3: current >= 7, seg4: current >= 8, seg5: current >= 9 };
-        for (var segId in segVisible) {
-          var segEl = document.getElementById(segId);
-          if (segEl) segEl.setAttribute("visible", segVisible[segId]);
-        }
-
-        var wpVisible = { 1: current >= 5, 2: current >= 6, 3: current >= 7, 4: current >= 8 };
-        for (var n = 1; n <= 4; n++) {
-          var dot = document.getElementById("wpDot" + n);
-          var lbl = document.getElementById("wpLbl" + n);
-          if (dot) dot.setAttribute("visible", wpVisible[n]);
-          if (lbl) lbl.setAttribute("visible", wpVisible[n]);
-        }
-
-        var poseTime = 0;
-        var targetRotY = 90;
-        if (s.robot && s.robot !== "run") {
-          var wp = s.robot;
-          if (wp.x === 0 && wp.z === 0) poseTime = 1.25;
-          else if (wp.x === 0.5 && wp.z === 0) poseTime = 2.5;
-          else if (wp.x === 0.5 && wp.z === 0.4) poseTime = 3.75;
-          else if (wp.x === 0 && wp.z === 0.4) poseTime = 5.0;
-          if (typeof s.rotY !== "undefined") targetRotY = s.rotY;
-        } else if (s.robot === "run") {
-          poseTime = -1;
-        }
-        setRobotPose(poseTime);
-        rotateBaseTo(targetRotY, s.robot === "run");
+      function selectLang(lang) {
+        selectedLang = lang;
+        document
+          .getElementById("optEn")
+          .classList.toggle("active", lang === "en");
+        document
+          .getElementById("optZh")
+          .classList.toggle("active", lang === "zh");
+        applyLang(lang); // langsung ubah tampilan menu juga
+      }
+      function openSettings() {
+        document.getElementById("settingsOverlay").classList.add("show");
+      }
+      function closeSettings() {
+        document.getElementById("settingsOverlay").classList.remove("show");
+      }
+      function startAR() {
+        window.location.href = "webar.html?lang=" + selectedLang;
       }
 
-      var lastRotY = 90;
-      var playTimer = null;
-      var WP_ROT = [140, 40, -40, -140];
-
-      function rotateBaseTo(targetRotY, isRun) {
-        var rig = document.getElementById("robotRig");
-        if (!rig) return;
-        rig.removeAttribute("animation__turn");
-        rig.removeAttribute("animation__play");
-        if (playTimer) { clearInterval(playTimer); playTimer = null; }
-        if (isRun) {
-          runPlaySequence(rig);
-        } else {
-          rig.setAttribute("animation__turn", {
-            property: "rotation", from: "0 " + lastRotY + " 0", to: "0 " + targetRotY + " 0",
-            dur: 700, easing: "easeOutBack"
-          });
-          lastRotY = targetRotY;
-        }
+      // ====== signature background ======
+      var canvas = document.getElementById("bgCanvas");
+      var ctx = canvas.getContext("2d");
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
       }
+      resize();
+      window.addEventListener("resize", resize);
 
-      function runPlaySequence(rig) {
-        var seq = [WP_ROT[0], WP_ROT[1], WP_ROT[2], WP_ROT[3], WP_ROT[0]];
-        var idx = 0;
-        var from = lastRotY;
-        function step() {
-          var to = seq[idx];
-          rig.removeAttribute("animation__play");
-          rig.setAttribute("animation__play", {
-            property: "rotation", from: "0 " + from + " 0", to: "0 " + to + " 0",
-            dur: 900, easing: "easeInOutQuad"
-          });
-          from = to; lastRotY = to; idx = (idx + 1) % seq.length;
-        }
-        step();
-        playTimer = setInterval(step, 1000);
+      /* ============================================================
+         >>> PENGATURAN UKURAN BACKGROUND WAYPOINT - CUSTOM DI SINI <<<
+         Ubah angka-angka di bawah untuk menyesuaikan ukuran & posisi
+         lintasan waypoint di latar belakang menu.
+         ============================================================ */
+      var BG = {
+        widthRatio: 0.7, // lebar lintasan relatif thd layar (0.3 = kecil, 0.7 = besar)
+        maxWidth: 520, // batas maksimum lebar (piksel) - perbesar utk lintasan lebih besar
+        heightRatio: 0.4, // tinggi relatif thd lebar (0.72 = persegi panjang 4:3)
+        verticalPos: 0.4, // posisi vertikal pusat (0.3 = atas, 0.5 = tengah)
+        waypointSize: 9, // radius titik waypoint (piksel) - perbesar utk titik lebih besar
+        robotSize: 9, // radius robot bergerak (piksel)
+        lineWidth: 2.5, // ketebalan garis lintasan
+        gridSize: 40, // jarak grid latar (piksel) - perbesar utk grid lebih renggang
+        speed: 0.004, // kecepatan robot di latar (lebih besar = lebih cepat)
+      };
+      /* ============================================================
+         >>> AKHIR PENGATURAN UKURAN - di bawah ini jangan diubah <<<
+         ============================================================ */
+
+      function getPath() {
+        var cx = canvas.width / 2,
+          cy = canvas.height * BG.verticalPos;
+        var w = Math.min(canvas.width * BG.widthRatio, BG.maxWidth);
+        var h = w * BG.heightRatio;
+        return [
+          { x: cx - w / 2, y: cy - h / 2 },
+          { x: cx + w / 2, y: cy - h / 2 },
+          { x: cx + w / 2, y: cy + h / 2 },
+          { x: cx - w / 2, y: cy + h / 2 },
+          { x: cx - w / 2, y: cy - h / 2 },
+        ];
       }
-
-      var robotRunMode = false;
-      var playRAF = null;
-      function setRobotPose(t) {
-        var rm = document.getElementById("robotModel");
-        if (!rm) return;
-        var mixer = rm.components && rm.components["animation-mixer"];
-        if (playRAF) { cancelAnimationFrame(playRAF); playRAF = null; }
-        if (t === -1) {
-          robotRunMode = true;
-          rm.setAttribute("animation-mixer", "clip: UR_ReachSequence; loop: repeat; timeScale: 0; clampWhenFinished: false");
-          var PLAY_START = 1.25;
-          var PLAY_END = 5.0;
-          var lastTs = null;
-          function playLoop(ts) {
-            if (!robotRunMode) return;
-            if (lastTs === null) lastTs = ts;
-            var dt = (ts - lastTs) / 1000;
-            lastTs = ts;
-            try {
-              var action = mixer && mixer.mixer && mixer.activeActions && mixer.activeActions[0];
-              if (action) {
-                var nt = action.time + dt;
-                if (nt > PLAY_END) nt = PLAY_START + (nt - PLAY_END);
-                action.time = nt;
-                mixer.mixer.update(0);
-              }
-            } catch (e) {}
-            playRAF = requestAnimationFrame(playLoop);
-          }
-          try {
-            var a = mixer && mixer.mixer && mixer.activeActions && mixer.activeActions[0];
-            if (a) { a.time = PLAY_START; mixer.mixer.update(0); }
-          } catch (e) {}
-          playRAF = requestAnimationFrame(playLoop);
-        } else {
-          robotRunMode = false;
-          rm.setAttribute("animation-mixer", "clip: UR_ReachSequence; loop: once; timeScale: 0; clampWhenFinished: true");
-          try {
-            var action = mixer && mixer.mixer && mixer.activeActions && mixer.activeActions[0];
-            if (action) { action.time = t; mixer.mixer.update(0); }
-          } catch (e) {}
+      var t = 0;
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        var P = getPath();
+        // grid
+        ctx.strokeStyle = "rgba(34,54,74,0.4)";
+        ctx.lineWidth = 1;
+        var g = BG.gridSize;
+        for (var x = 0; x < canvas.width; x += g) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, canvas.height);
+          ctx.stroke();
         }
+        for (var y = 0; y < canvas.height; y += g) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvas.width, y);
+          ctx.stroke();
+        }
+        // lintasan
+        ctx.strokeStyle = "rgba(47,182,196,0.55)";
+        ctx.lineWidth = BG.lineWidth;
+        ctx.beginPath();
+        ctx.moveTo(P[0].x, P[0].y);
+        for (var i = 1; i < P.length; i++) ctx.lineTo(P[i].x, P[i].y);
+        ctx.stroke();
+        // waypoint
+        var colors = ["#1D9E75", "#E0A33A", "#1D9E75", "#1D9E75"];
+        for (var i = 0; i < 4; i++) {
+          ctx.beginPath();
+          ctx.arc(P[i].x, P[i].y, BG.waypointSize, 0, Math.PI * 2);
+          ctx.fillStyle = colors[i];
+          ctx.fill();
+          ctx.strokeStyle = "rgba(255,255,255,0.3)";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+        // robot bergerak
+        var seg = Math.floor(t) % 4,
+          frac = t - Math.floor(t);
+        var a = P[seg],
+          b = P[seg + 1];
+        var rx = a.x + (b.x - a.x) * frac,
+          ry = a.y + (b.y - a.y) * frac;
+        ctx.beginPath();
+        ctx.arc(rx, ry, BG.robotSize, 0, Math.PI * 2);
+        ctx.fillStyle = "#E24B4A";
+        ctx.shadowColor = "#E24B4A";
+        ctx.shadowBlur = 16;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        t += BG.speed;
+        if (t >= 4) t = 0;
+        requestAnimationFrame(draw);
       }
-
-      document.getElementById("btnNext").addEventListener("click", function () {
-        if (current < steps.length - 1) {
-          current++;
-          playSfx("sfxClick");
-          if (current >= 5 && current <= 8) playSfx("sfxWaypoint");
-          if (current >= 5 && current <= 9) playSfx("sfxRobot");
-          render();
-        }
-      });
-      document.getElementById("btnBack").addEventListener("click", function () {
-        if (current > 0) {
-          current--;
-          playSfx("sfxClick");
-          render();
-        }
-      });
-
-      window.addEventListener("load", function () {
-        setTimeout(function () { render(); }, 1000);
-      });
-
-      window.addEventListener("load", function () {
-        setTimeout(function () {
-          var rm = document.getElementById("robotModel");
-          if (rm) {
-            rm.addEventListener("model-loaded", function () {
-              document.title = "Web AR - UR5";
-              setTimeout(function () { render(); }, 200);
-            });
-            rm.addEventListener("model-error", function (e) {
-              document.title = "MODEL ERROR";
-            });
-          }
-        }, 800);
-      });
+      draw();
 
       var lastTouch = 0;
-      document.addEventListener("touchend", function (e) {
-        var now = Date.now();
-        if (now - lastTouch <= 300) { e.preventDefault(); }
-        lastTouch = now;
-      }, { passive: false });
-      document.addEventListener("gesturestart", function (e) { e.preventDefault(); });
+      document.addEventListener(
+        "touchend",
+        function (e) {
+          var now = Date.now();
+          if (now - lastTouch <= 300) {
+            e.preventDefault();
+          }
+          lastTouch = now;
+        },
+        { passive: false },
+      );
+      document.addEventListener("gesturestart", function (e) {
+        e.preventDefault();
+      });
     </script>
   </body>
 </html>
